@@ -1,0 +1,22 @@
+body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+header { background:#0a6; color:#fff; padding:12px 16px; display:flex; justify-content:space-between; align-items:center }
+main { padding:16px }
+form { max-width:360px }
+label { display:block; margin-top:8px }
+input { width:100%; padding:8px; box-sizing:border-box }
+button { margin-top:10px; padding:8px 12px }
+.messages { list-style:none; padding:0 }
+.messages li { padding:8px; margin-bottom:6px }
+.success { background:#e6ffed; border:1px solid #9ee0b4 }
+.error { background:#ffe6e6; border:1px solid #f09 }
+.info { background:#e6f0ff; border:1px solid #9ab }
+
+.actions { margin-bottom:12px }
+.books-table { width:100%; border-collapse:collapse; margin-top:8px }
+.books-table th, .books-table td { border:1px solid #ddd; padding:8px; text-align:left }
+.books-table th { background:#f6f6f6 }
+.qty-input { width:80px; }
+.add-btn { padding:6px 10px }
+#status { margin-top:12px; height:20px }
+.ok { color:green }
+.err { color:crimson }

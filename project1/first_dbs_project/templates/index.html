@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+  <h2>Welcome, {{ user }}</h2>
+
+  <div class="tabs">
+    <button id="tab-add" class="tabbtn">Add to Basket</button>
+    <button id="tab-view" class="tabbtn">View Basket</button>
+    <button id="tab-stock" class="tabbtn">View Stock</button>
+  </div>
+
+  <section id="add-section" class="tab-section">
+    <h3>Add to Basket</h3>
+    <p>Enter the book info you want to add to your basket.</p>
+    <form id="add-form" onsubmit="return handleAdd(event)">
+      <label for="isbn">ISBN</label>
+      <input id="isbn" name="ISBN" required />
+
+      <label for="quantity">Quantity</label>
+      <input id="quantity" name="quantity" type="number" min="1" value="1" required />
+
+      <button type="submit">Add</button>
+    </form>
+    <div id="add-status" aria-live="polite"></div>
+  </section>
+
+  <section id="view-section" class="tab-section" style="display:none">
+    <h3>View Basket</h3>
+    <p>Press the button to load your basket contents.</p>
+    <button id="load-basket">Load Basket</button>
+    <div id="basket-container"></div>
+  </section>
+
+  <section id="stock-section" class="tab-section" style="display:none">
+    <h3>View Stock</h3>
+    <p>Shows only books with available stock.</p>
+    <button id="load-stock">Load Stock</button>
+    <div id="stock-container"></div>
+  </section>
+
+  <script>
+    const tabAdd = document.getElementById('tab-add');
+    const tabView = document.getElementById('tab-view');
+    const tabStock = document.getElementById('tab-stock');
+
+    const addSec = document.getElementById('add-section');
+    const viewSec = document.getElementById('view-section');
+    const stockSec = document.getElementById('stock-section');
+
+    function showSection(section) {
+      addSec.style.display = section === 'add' ? 'block' : 'none';
+      viewSec.style.display = section === 'view' ? 'block' : 'none';
+      stockSec.style.display = section === 'stock' ? 'block' : 'none';
+    }
+
+    tabAdd.addEventListener('click', () => showSection('add'));
+    tabView.addEventListener('click', () => showSection('view'));
+    tabStock.addEventListener('click', () => showSection('stock'));
+
+    // keep basket_id available from server
+    const BASKET_ID = {{ basket_id|tojson }};
+
+    async function handleAdd(e) {
+      e.preventDefault();
+      const isbn = document.getElementById('isbn').value.trim();
+      const quantity = Number(document.getElementById('quantity').value) || 1;
+      const status = document.getElementById('add-status');
+
+      const resp = await fetch('/add_to_basket', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ISBN: isbn, quantity })
+      });
+
+      const data = await resp.json().catch(() => ({}));
+      if (resp.ok) {
+        status.textContent = data.message || 'Added to basket';
+        status.className = 'ok';
+        document.getElementById('add-form').reset();
+      } else {
+        status.textContent = data.message || 'Error adding to basket';
+        status.className = 'err';
+      }
+      setTimeout(() => { status.textContent = ''; status.className = ''; }, 2500);
+      return false;
+    }
+
+    document.getElementById('load-basket').addEventListener('click', async () => {
+      const container = document.getElementById('basket-container');
+      container.innerHTML = '';
+      if (!BASKET_ID) { container.textContent = 'No basket found.'; return; }
+
+      const resp = await fetch('/view_basket/' + BASKET_ID);
+      if (!resp.ok) { container.textContent = 'Error loading basket'; return; }
+      const items = await resp.json();
+      if (!items.length) { container.textContent = 'Basket is empty.'; return; }
+
+      const table = document.createElement('table');
+      table.className = 'books-table';
+      table.innerHTML = '<thead><tr><th>Title</th><th>Quantity</th></tr></thead>';
+      const tbody = document.createElement('tbody');
+      items.forEach(it => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${it.title}</td><td>${it.quantity}</td>`;
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      container.appendChild(table);
+    });
+
+    document.getElementById('load-stock').addEventListener('click', async () => {
+      const container = document.getElementById('stock-container');
+      container.innerHTML = '';
+      const resp = await fetch('/stock');
+      if (!resp.ok) { container.textContent = 'Error loading stock'; return; }
+      const rows = await resp.json();
+      // filter only those with total_stock > 0
+      const available = rows.filter(r => Number(r.total_stock) > 0);
+      if (!available.length) { container.textContent = 'No stock available.'; return; }
+
+      const table = document.createElement('table');
+      table.className = 'books-table';
+      table.innerHTML = '<thead><tr><th>ISBN</th><th>Title</th><th>Stock</th></tr></thead>';
+      const tbody = document.createElement('tbody');
+      available.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${r.ISBN}</td><td>${r.title}</td><td>${r.total_stock}</td>`;
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      container.appendChild(table);
+    });
+
+    // default view
+    showSection('add');
+  </script>
+
+{% endblock %}

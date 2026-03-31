@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Shopping System</title>
+</head>
+<body>
+
+<h1>Shopping Cart</h1>
+
+<h2>Register</h2>
+<input id="reg_email" placeholder="Email">
+<input id="reg_name" placeholder="Name">
+<button onclick="register()">Register</button>
+
+<h2>Login</h2>
+<input id="login_email" placeholder="Email">
+<button onclick="login()">Login</button>
+
+<h2>View Books (Stock)</h2>
+<button onclick="loadStock()">Load Books</button>
+<ul id="stock_list"></ul>
+
+<h2>Add to Basket</h2>
+<input id="basket_id" placeholder="Basket ID">
+<input id="isbn" placeholder="ISBN">
+<input id="qty" placeholder="Quantity">
+<button onclick="addToBasket()">Add</button>
+
+<h2>View Basket</h2>
+<input id="view_id" placeholder="Basket ID">
+<button onclick="viewBasket()">View</button>
+
+<ul id="basket_output"></ul>
+
+<script>
+const BASE = "http://127.0.0.1:5000";
+
+function register() {
+    fetch(BASE + '/register', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            email: reg_email.value,
+            name: reg_name.value
+        })
+    })
+    .then(res => res.json())
+    .then(data => alert(data.message));
+}
+
+function login() {
+    fetch(BASE + '/login', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            email: login_email.value
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === "success") {
+            alert("Your Basket ID: " + data.basket_id);
+        } else {
+            alert(data.message);
+        }
+    });
+}
+
+function loadStock() {
+    fetch(BASE + '/stock')
+    .then(res => res.json())
+    .then(data => {
+        stock_list.innerHTML = "";
+        data.forEach(item => {
+            stock_list.innerHTML += `<li>${item.title} (${item.ISBN}) - Stock: ${item.total_stock}</li>`;
+        });
+    });
+}
+
+function addToBasket() {
+    fetch(BASE + '/add_to_basket', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            basket_id: parseInt(basket_id.value),
+            ISBN: isbn.value,
+            quantity: parseInt(qty.value)
+        })
+    })
+    .then(res => res.json())
+    .then(data => alert(data.message));
+}
+
+function viewBasket() {
+    fetch(BASE + '/view_basket/' + view_id.value)
+    .then(res => res.json())
+    .then(data => {
+        basket_output.innerHTML = "";
+        data.forEach(item => {
+            basket_output.innerHTML += `<li>${item.title} x ${item.quantity}</li>`;
+        });
+    });
+}
+</script>
+
+</body>
+</html>

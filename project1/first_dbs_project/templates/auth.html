@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block title %}Authenticate{% endblock %}
+
+{% block content %}
+  <h2 id="page-title">Account</h2>
+
+  <div class="tabs">
+    <button id="loginTab" class="tabbtn">Login</button>
+    <button id="registerTab" class="tabbtn">Register</button>
+  </div>
+
+  <div id="loginBox" class="tab">
+    <form method="post" action="{{ url_for('auth') }}">
+      <input type="hidden" name="action" value="login" />
+      <label for="login_email">Email</label>
+      <input id="login_email" name="email" required />
+      <button type="submit">Login</button>
+    </form>
+  </div>
+
+  <div id="registerBox" class="tab">
+    <form method="post" action="{{ url_for('auth') }}">
+      <input type="hidden" name="action" value="register" />
+      <label for="reg_name">Name</label>
+      <input id="reg_name" name="name" required />
+      <label for="reg_email">Email</label>
+      <input id="reg_email" name="email" required />
+      <button type="submit">Register</button>
+    </form>
+  </div>
+
+  <script>
+    const loginTab = document.getElementById('loginTab');
+    const registerTab = document.getElementById('registerTab');
+    const loginBox = document.getElementById('loginBox');
+    const registerBox = document.getElementById('registerBox');
+
+    function show(tab) {
+      if (tab === 'register') {
+        registerBox.style.display = 'block';
+        loginBox.style.display = 'none';
+      } else {
+        registerBox.style.display = 'none';
+        loginBox.style.display = 'block';
+      }
+    }
+
+    loginTab.addEventListener('click', () => show('login'));
+    registerTab.addEventListener('click', () => show('register'));
+
+    // initial tab from server (query param 'tab' or default to login)
+    const params = new URLSearchParams(window.location.search);
+    show(params.get('tab') === 'register' ? 'register' : 'login');
+  </script>
+
+  <style>
+    .tabs { margin-bottom:12px }
+    .tabbtn { padding:8px 12px; margin-right:6px }
+    .tab { display:block; max-width:420px }
+  </style>
+
+{% endblock %}
