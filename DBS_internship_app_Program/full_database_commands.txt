@@ -1,0 +1,858 @@
+-- =========================================================
+-- INTERNSHIP & PLACEMENT TRACKING SYSTEM
+-- FINAL COMPLETE MYSQL WORKBENCH DATABASE
+-- =========================================================
+
+
+
+-- =========================================================
+-- STUDENT TABLE
+-- =========================================================
+
+CREATE TABLE student (
+
+    student_id INT PRIMARY KEY AUTO_INCREMENT,
+
+    name VARCHAR(100) NOT NULL,
+
+    branch VARCHAR(50) NOT NULL,
+
+    cgpa DECIMAL(3,2) NOT NULL,
+
+    email VARCHAR(100) UNIQUE NOT NULL,
+
+    phone VARCHAR(15) UNIQUE NOT NULL,
+
+    academic_level ENUM(
+        'UG',
+        'PG',
+        'Diploma'
+    ) NOT NULL,
+
+    graduation_year INT NOT NULL,
+
+    resume_url TEXT,
+
+    resume_public_id VARCHAR(255),
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+
+);
+
+
+
+
+
+-- =========================================================
+-- ADMIN USERS TABLE
+-- =========================================================
+
+CREATE TABLE admin_users (
+
+    username VARCHAR(30) PRIMARY KEY,
+
+    password_hash VARCHAR(500) NOT NULL
+
+);
+
+
+
+
+
+-- =========================================================
+-- COMPANY TABLE
+-- =========================================================
+
+CREATE TABLE company (
+
+    company_id INT PRIMARY KEY AUTO_INCREMENT,
+
+    name VARCHAR(100) NOT NULL,
+
+    industry VARCHAR(100),
+
+    contact_email VARCHAR(100)
+    UNIQUE NOT NULL
+
+);
+
+
+
+
+
+-- =========================================================
+-- COMPANY LOCATION TABLE
+-- =========================================================
+
+CREATE TABLE company_location (
+
+    location_id INT PRIMARY KEY AUTO_INCREMENT,
+
+    company_id INT NOT NULL,
+
+    location VARCHAR(100) NOT NULL,
+
+    FOREIGN KEY (company_id)
+    REFERENCES company(company_id)
+    ON DELETE CASCADE
+
+);
+
+
+
+
+
+-- =========================================================
+-- JOB ROLE TABLE
+-- =========================================================
+
+CREATE TABLE job_role (
+
+    role_id INT PRIMARY KEY AUTO_INCREMENT,
+
+    company_id INT NOT NULL,
+
+    title VARCHAR(100) NOT NULL,
+
+    package DECIMAL(10,2) NOT NULL,
+
+    role_type ENUM(
+        'Internship',
+        'Full-time'
+    ) NOT NULL,
+
+    eligibility_cgpa DECIMAL(3,2) NOT NULL,
+
+    deadline DATE NOT NULL,
+
+    description TEXT,
+
+    is_active BOOLEAN DEFAULT TRUE,
+
+    FOREIGN KEY (company_id)
+    REFERENCES company(company_id)
+    ON DELETE CASCADE
+
+);
+
+
+
+
+
+-- =========================================================
+-- JOB APPLICATION TABLE
+-- =========================================================
+
+CREATE TABLE job_application (
+
+    application_id INT PRIMARY KEY AUTO_INCREMENT,
+
+    student_id INT NOT NULL,
+
+    role_id INT NOT NULL,
+
+    application_date DATE NOT NULL,
+
+    current_status ENUM(
+        'Applied',
+        'Selected',
+        'Rejected'
+    ) DEFAULT 'Applied',
+
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ON UPDATE CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (student_id)
+    REFERENCES student(student_id)
+    ON DELETE RESTRICT,
+
+    FOREIGN KEY (role_id)
+    REFERENCES job_role(role_id)
+    ON DELETE CASCADE,
+
+    UNIQUE(student_id, role_id)
+
+);
+
+
+
+
+
+-- =========================================================
+-- SELECTION STAGE TABLE
+-- =========================================================
+
+CREATE TABLE selection_stage (
+
+    stage_id INT PRIMARY KEY AUTO_INCREMENT,
+
+    role_id INT NOT NULL,
+
+    stage_number INT NOT NULL,
+
+    stage_type VARCHAR(50) NOT NULL,
+
+    FOREIGN KEY (role_id)
+    REFERENCES job_role(role_id)
+    ON DELETE CASCADE,
+
+    UNIQUE(role_id, stage_number)
+
+);
+
+
+
+
+
+-- =========================================================
+-- STAGE RESULT TABLE
+-- =========================================================
+
+CREATE TABLE stage_result (
+
+    result_id INT PRIMARY KEY AUTO_INCREMENT,
+
+    application_id INT NOT NULL,
+
+    stage_id INT NOT NULL,
+
+    result_status ENUM(
+        'Pass',
+        'Fail'
+    ) NOT NULL,
+
+    FOREIGN KEY (application_id)
+    REFERENCES job_application(application_id)
+    ON DELETE CASCADE,
+
+    FOREIGN KEY (stage_id)
+    REFERENCES selection_stage(stage_id)
+    ON DELETE CASCADE,
+
+    UNIQUE(application_id, stage_id)
+
+);
+
+
+
+
+
+-- =========================================================
+-- OFFER RECORD TABLE
+-- =========================================================
+
+CREATE TABLE offer_record (
+
+    offer_id INT PRIMARY KEY AUTO_INCREMENT,
+
+    application_id INT UNIQUE NOT NULL,
+
+    offer_date DATE NOT NULL,
+
+    offer_status ENUM(
+        'Pending',
+        'Accepted',
+        'Rejected'
+    ) DEFAULT 'Pending',
+
+    accepted_at TIMESTAMP NULL,
+
+    offer_letter_url TEXT,
+
+    offer_letter_public_id VARCHAR(255),
+
+    FOREIGN KEY (application_id)
+    REFERENCES job_application(application_id)
+    ON DELETE CASCADE
+
+);
+
+
+
+
+
+
+
+
+-- =========================================================
+-- PROCEDURE : APPLY FOR ROLE
+-- =========================================================
+
+DELIMITER $$
+
+CREATE PROCEDURE apply_for_role(
+
+    IN p_student_id INT,
+    IN p_role_id INT
+
+)
+
+BEGIN
+
+    INSERT INTO job_application (
+
+        student_id,
+        role_id,
+        application_date,
+        current_status
+
+    )
+
+    VALUES (
+
+        p_student_id,
+        p_role_id,
+        CURDATE(),
+        'Applied'
+
+    );
+
+END $$
+
+DELIMITER ;
+
+
+
+
+
+
+
+
+
+-- =========================================================
+-- PROCEDURE : GENERATE OFFER
+-- =========================================================
+
+DELIMITER $$
+
+CREATE PROCEDURE generate_offer(
+
+    IN p_application_id INT
+
+)
+
+BEGIN
+
+    DECLARE v_status VARCHAR(20);
+
+    DECLARE v_offer_count INT;
+
+    SELECT current_status
+    INTO v_status
+    FROM job_application
+    WHERE application_id = p_application_id;
+
+    SELECT COUNT(*)
+    INTO v_offer_count
+    FROM offer_record
+    WHERE application_id = p_application_id;
+
+    IF v_status = 'Selected'
+    AND v_offer_count = 0 THEN
+
+        INSERT INTO offer_record (
+
+            application_id,
+            offer_date,
+            offer_status
+
+        )
+
+        VALUES (
+
+            p_application_id,
+            CURDATE(),
+            'Pending'
+
+        );
+
+    END IF;
+
+END $$
+
+DELIMITER ;
+
+
+
+
+
+
+
+
+
+-- =========================================================
+-- PROCEDURE : ACCEPT OFFER
+-- =========================================================
+
+DELIMITER $$
+
+CREATE PROCEDURE accept_offer(
+
+    IN p_offer_id INT
+
+)
+
+BEGIN
+
+    UPDATE offer_record
+
+    SET
+        offer_status = 'Accepted',
+        accepted_at = NOW()
+
+    WHERE offer_id = p_offer_id;
+
+END $$
+
+DELIMITER ;
+
+
+
+
+
+
+
+
+
+-- =========================================================
+-- PROCEDURE : REJECT OFFER
+-- =========================================================
+
+DELIMITER $$
+
+CREATE PROCEDURE reject_offer(
+
+    IN p_offer_id INT
+
+)
+
+BEGIN
+
+    UPDATE offer_record
+
+    SET offer_status = 'Rejected'
+
+    WHERE offer_id = p_offer_id;
+
+END $$
+
+DELIMITER ;
+
+
+
+
+
+
+
+
+
+
+
+-- =========================================================
+-- TRIGGER : APPLICATION VALIDATION
+-- =========================================================
+
+DELIMITER $$
+
+CREATE TRIGGER trg_application_validation
+
+BEFORE INSERT ON job_application
+
+FOR EACH ROW
+
+BEGIN
+
+    DECLARE v_student_cgpa DECIMAL(3,2);
+
+    DECLARE v_required_cgpa DECIMAL(3,2);
+
+    DECLARE v_deadline DATE;
+
+    DECLARE v_resume_url TEXT;
+
+    DECLARE v_grad_year INT;
+
+    DECLARE v_role_type VARCHAR(20);
+
+    DECLARE v_is_active BOOLEAN;
+
+    -- GET STUDENT DETAILS
+
+    SELECT
+        cgpa,
+        resume_url,
+        graduation_year
+
+    INTO
+        v_student_cgpa,
+        v_resume_url,
+        v_grad_year
+
+    FROM student
+
+    WHERE student_id = NEW.student_id;
+
+    -- GET ROLE DETAILS
+
+    SELECT
+        eligibility_cgpa,
+        deadline,
+        role_type,
+        is_active
+
+    INTO
+        v_required_cgpa,
+        v_deadline,
+        v_role_type,
+        v_is_active
+
+    FROM job_role
+
+    WHERE role_id = NEW.role_id;
+
+    -- ROLE ACTIVE CHECK
+
+    IF v_is_active = FALSE THEN
+
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT =
+        'Job role is inactive';
+
+    END IF;
+
+    -- CGPA CHECK
+
+    IF v_student_cgpa < v_required_cgpa THEN
+
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT =
+        'Student does not meet CGPA requirement';
+
+    END IF;
+
+    -- DEADLINE CHECK
+
+    IF CURDATE() > v_deadline THEN
+
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT =
+        'Application deadline has passed';
+
+    END IF;
+
+    -- RESUME CHECK
+
+    IF v_resume_url IS NULL THEN
+
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT =
+        'Upload resume before applying';
+
+    END IF;
+
+    -- FULL-TIME ELIGIBILITY CHECK
+
+    IF v_grad_year < YEAR(CURDATE())
+    AND v_role_type = 'Full-time' THEN
+
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT =
+        'Student not eligible for full-time role';
+
+    END IF;
+
+END $$
+
+DELIMITER ;
+
+
+
+
+
+
+
+
+
+
+
+
+-- =========================================================
+-- TRIGGER : STAGE RESULT AUTOMATION
+-- =========================================================
+
+DELIMITER $$
+
+CREATE TRIGGER trg_stage_result
+
+AFTER INSERT ON stage_result
+
+FOR EACH ROW
+
+BEGIN
+
+    DECLARE v_total_stages INT;
+
+    DECLARE v_passed_stages INT;
+
+    DECLARE v_failed_stages INT;
+
+    DECLARE v_role_id INT;
+
+    -- GET ROLE ID
+
+    SELECT role_id
+    INTO v_role_id
+    FROM job_application
+    WHERE application_id = NEW.application_id;
+
+    -- TOTAL STAGES
+
+    SELECT COUNT(*)
+    INTO v_total_stages
+    FROM selection_stage
+    WHERE role_id = v_role_id;
+
+    -- PASSED STAGES
+
+    SELECT COUNT(*)
+    INTO v_passed_stages
+    FROM stage_result
+    WHERE application_id = NEW.application_id
+    AND result_status = 'Pass';
+
+    -- FAILED STAGES
+
+    SELECT COUNT(*)
+    INTO v_failed_stages
+    FROM stage_result
+    WHERE application_id = NEW.application_id
+    AND result_status = 'Fail';
+
+    -- IF FAILED
+
+    IF v_failed_stages > 0 THEN
+
+        UPDATE job_application
+
+        SET current_status = 'Rejected'
+
+        WHERE application_id = NEW.application_id;
+
+    -- IF ALL PASSED
+
+    ELSEIF v_passed_stages = v_total_stages THEN
+
+        UPDATE job_application
+
+        SET current_status = 'Selected'
+
+        WHERE application_id = NEW.application_id;
+
+        CALL generate_offer(
+            NEW.application_id
+        );
+
+    -- OTHERWISE IN PROCESS
+
+    ELSE
+
+        UPDATE job_application
+
+        SET current_status = 'In Process'
+
+        WHERE application_id = NEW.application_id;
+
+    END IF;
+
+END $$
+
+DELIMITER ;
+
+
+
+
+
+
+
+
+
+
+
+
+
+-- =========================================================
+-- TRIGGER : OFFER ACCEPTANCE VALIDATION
+-- =========================================================
+
+DELIMITER $$
+
+CREATE TRIGGER trg_offer_acceptance
+
+BEFORE UPDATE ON offer_record
+
+FOR EACH ROW
+
+BEGIN
+
+    DECLARE v_student_id INT;
+
+    DECLARE v_existing_count INT;
+
+    DECLARE v_role_type VARCHAR(20);
+
+    -- ONLY CHECK WHEN ACCEPTING
+
+    IF NEW.offer_status = 'Accepted' THEN
+
+        -- FIND STUDENT
+
+        SELECT a.student_id
+        INTO v_student_id
+        FROM job_application a
+        WHERE a.application_id = NEW.application_id;
+
+        -- FIND ROLE TYPE
+
+        SELECT j.role_type
+        INTO v_role_type
+        FROM job_role j
+        JOIN job_application a
+        ON j.role_id = a.role_id
+        WHERE a.application_id = NEW.application_id;
+
+        -- ONLY FULL-TIME RESTRICTED
+
+        IF v_role_type = 'Full-time' THEN
+
+            SELECT COUNT(*)
+            INTO v_existing_count
+
+            FROM offer_record o
+
+            JOIN job_application a
+            ON o.application_id = a.application_id
+
+            JOIN job_role j
+            ON a.role_id = j.role_id
+
+            WHERE a.student_id = v_student_id
+            AND o.offer_status = 'Accepted'
+            AND j.role_type = 'Full-time';
+
+            IF v_existing_count > 0 THEN
+
+                SIGNAL SQLSTATE '45000'
+                SET MESSAGE_TEXT =
+                'Student already accepted a full-time offer';
+
+            END IF;
+
+        END IF;
+
+    END IF;
+
+END $$
+
+DELIMITER ;
+
+
+
+
+
+
+
+
+
+
+
+
+
+-- =========================================================
+-- EVENT SCHEDULER : DEACTIVATE EXPIRED ROLES
+-- =========================================================
+
+SET GLOBAL event_scheduler = ON;
+
+DELIMITER $$
+
+CREATE EVENT ev_deactivate_expired_roles
+
+ON SCHEDULE EVERY 1 DAY
+
+DO
+
+BEGIN
+
+    UPDATE job_role
+
+    SET is_active = FALSE
+
+    WHERE deadline < CURDATE();
+
+END $$
+
+DELIMITER ;
+
+
+
+
+
+
+
+
+
+
+
+
+
+-- =========================================================
+-- INDEXES
+-- =========================================================
+
+CREATE INDEX idx_student_email
+ON student(email);
+
+CREATE INDEX idx_student_branch
+ON student(branch);
+
+CREATE INDEX idx_student_cgpa
+ON student(cgpa);
+
+CREATE INDEX idx_student_grad_year
+ON student(graduation_year);
+
+CREATE INDEX idx_company_name
+ON company(name);
+
+CREATE INDEX idx_company_industry
+ON company(industry);
+
+CREATE INDEX idx_job_role_deadline
+ON job_role(deadline);
+
+CREATE INDEX idx_job_role_active
+ON job_role(is_active);
+
+CREATE INDEX idx_job_role_type
+ON job_role(role_type);
+
+CREATE INDEX idx_application_status
+ON job_application(current_status);
+
+CREATE INDEX idx_application_student
+ON job_application(student_id);
+
+CREATE INDEX idx_application_role
+ON job_application(role_id);
+
+CREATE INDEX idx_offer_status
+ON offer_record(offer_status);
+
+CREATE INDEX idx_stage_role
+ON selection_stage(role_id);
+
+CREATE INDEX idx_stage_result_application
+ON stage_result(application_id);
+
+CREATE INDEX idx_stage_result_stage
+ON stage_result(stage_id);

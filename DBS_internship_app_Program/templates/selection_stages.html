@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}Selection Stages - Placement Tracking System{% endblock %}
+
+{% block content %}
+<div class="page-title">Selection Stages</div>
+
+<div class="card">
+    <div class="toolbar">
+        <div class="toolbar-left">
+            <form action="{{ url_for('list_stages') }}" method="GET" style="display: flex; gap: 10px;">
+                <div class="search-container">
+                    <span class="material-symbols-outlined">search</span>
+                    <input type="text" name="search" placeholder="Search by job title or stage..." value="{{ search_query or '' }}">
+                </div>
+                <button type="submit" class="btn btn-secondary">Go</button>
+            </form>
+        </div>
+
+        <button class="btn btn-primary" onclick="openModal('createStageModal')">
+            <span class="material-symbols-outlined" style="font-size: 18px;">add</span>
+            Create Stage
+        </button>
+    </div>
+
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th style="width: 60px;"></th>
+                    <th>Company Name</th>
+                    <th>Job Title</th>
+                    <th>Stage Number</th>
+                    <th>Stage Type</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if stages %}
+                    {% for stage in stages %}
+                    <tr>
+                        <td class="actions-cell">
+                            <button class="icon-btn edit-btn" title="Edit Selection Stage"
+                                    data-id="{{ stage.stage_id }}"
+                                    data-role-id="{{ stage.role_id }}"
+                                    data-stage-num="{{ stage.stage_number }}"
+                                    data-stage-type="{{ stage.stage_type }}"
+                                    onclick="editStage(this)">
+                                <span class="material-symbols-outlined">edit_square</span>
+                            </button>
+                            <a href="{{ url_for('delete_stage', stage_id=stage.stage_id) }}" 
+                               class="icon-btn delete" 
+                               onclick="return confirm('Are you sure you want to delete this stage? Associated stage results for students will be deleted cascadingly.');"
+                               title="Delete Stage">
+                                <span class="material-symbols-outlined">delete</span>
+                            </a>
+                        </td>
+                        <td style="font-weight: 500;">{{ stage.company_name }}</td>
+                        <td>{{ stage.role_title }}</td>
+                        <td>
+                            <span class="badge badge-info" style="font-weight: 600;">Stage {{ stage.stage_number }}</span>
+                        </td>
+                        <td>{{ stage.stage_type }}</td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 20px;">
+                            No selection stages found. Click "Create Stage" to define one.
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="pagination">
+        <span>1 - {{ stages|length }} of {{ stages|length }}</span>
+    </div>
+</div>
+
+<!-- ==========================================
+     CREATE STAGE MODAL
+     ========================================== -->
+<div id="createStageModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title">Add Selection Stage</h2>
+            <button class="close-btn" onclick="closeModal('createStageModal')">&times;</button>
+        </div>
+        <form action="{{ url_for('create_stage') }}" method="POST">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="role_id">Select Job Role *</label>
+                    <select id="role_id" name="role_id" class="form-control" required>
+                        <option value="">-- Choose Job Role --</option>
+                        {% for role in roles %}
+                            <option value="{{ role.role_id }}">{{ role.company_name }} - {{ role.title }} (Deadline: {{ role.deadline }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="stage_number">Stage Number *</label>
+                        <input type="number" min="1" max="20" id="stage_number" name="stage_number" class="form-control" placeholder="e.g. 1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="stage_type">Stage Type *</label>
+                        <input type="text" id="stage_type" name="stage_type" class="form-control" placeholder="e.g. Aptitude Test / Tech Interview" required autocomplete="off">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('createStageModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Stage</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ==========================================
+     EDIT STAGE MODAL
+     ========================================== -->
+<div id="editStageModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title">Edit Selection Stage</h2>
+            <button class="close-btn" onclick="closeModal('editStageModal')">&times;</button>
+        </div>
+        <form action="{{ url_for('edit_stage') }}" method="POST">
+            <input type="hidden" id="edit_id" name="stage_id">
+            
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="edit_role_id">Select Job Role *</label>
+                    <select id="edit_role_id" name="role_id" class="form-control" required>
+                        {% for role in roles %}
+                            <option value="{{ role.role_id }}">{{ role.company_name }} - {{ role.title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit_stage_number">Stage Number *</label>
+                        <input type="number" min="1" max="20" id="edit_stage_number" name="stage_number" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_stage_type">Stage Type *</label>
+                        <input type="text" id="edit_stage_type" name="stage_type" class="form-control" required autocomplete="off">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('editStageModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">Update Stage</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function editStage(button) {
+        const id = button.getAttribute('data-id');
+        const roleId = button.getAttribute('data-role-id');
+        const stageNum = button.getAttribute('data-stage-num');
+        const stageType = button.getAttribute('data-stage-type');
+
+        document.getElementById('edit_id').value = id;
+        document.getElementById('edit_role_id').value = roleId;
+        document.getElementById('edit_stage_number').value = stageNum;
+        document.getElementById('edit_stage_type').value = stageType;
+
+        openModal('editStageModal');
+    }
+</script>
+{% endblock %}

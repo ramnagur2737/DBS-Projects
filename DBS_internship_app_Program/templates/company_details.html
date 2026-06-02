@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block title %}Company Details - Placement Tracking System{% endblock %}
+
+{% block content %}
+<div class="page-title">Company Details</div>
+
+<div class="card">
+    <div class="toolbar">
+        <div class="toolbar-left">
+            <form action="{{ url_for('list_companies') }}" method="GET" style="display: flex; gap: 10px;">
+                <div class="search-container">
+                    <span class="material-symbols-outlined">search</span>
+                    <input type="text" name="search" placeholder="Search by name or industry..." value="{{ search_query or '' }}">
+                </div>
+                <button type="submit" class="btn btn-secondary">Go</button>
+            </form>
+        </div>
+
+        <button class="btn btn-primary" onclick="openModal('createCompanyModal')">
+            <span class="material-symbols-outlined" style="font-size: 18px;">add</span>
+            Create
+        </button>
+    </div>
+
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th style="width: 60px;"></th>
+                    <th>Company Name</th>
+                    <th>Industry</th>
+                    <th>Contact Email</th>
+                    <th>Locations</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if companies %}
+                    {% for company in companies %}
+                    <tr>
+                        <td class="actions-cell">
+                            <button class="icon-btn edit-btn" title="Edit Company"
+                                    data-id="{{ company.company_id }}"
+                                    data-name="{{ company.name }}"
+                                    data-industry="{{ company.industry }}"
+                                    data-email="{{ company.contact_email }}"
+                                    data-locations="{{ company.locations_list or '' }}"
+                                    onclick="editCompany(this)">
+                                <span class="material-symbols-outlined">edit_square</span>
+                            </button>
+                            <a href="{{ url_for('delete_company', company_id=company.company_id) }}" 
+                               class="icon-btn delete" 
+                               onclick="return confirm('Are you sure you want to delete this company? All associated job roles and applications will be deleted cascadingly.');"
+                               title="Delete Company">
+                                <span class="material-symbols-outlined">delete</span>
+                            </a>
+                        </td>
+                        <td style="font-weight: 500;">{{ company.name }}</td>
+                        <td>{{ company.industry }}</td>
+                        <td>{{ company.contact_email }}</td>
+                        <td>
+                            {% if company.locations_list %}
+                                {% for loc in company.locations_list.split(',') %}
+                                    <span class="badge badge-info" style="margin-right: 4px; margin-bottom: 4px; font-weight: 500;">{{ loc.strip() }}</span>
+                                {% endfor %}
+                            {% else %}
+                                <span style="color: var(--text-muted); font-style: italic;">No locations specified</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 20px;">
+                            No company records found. Click "Create" to add one.
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="pagination">
+        <span>1 - {{ companies|length }} of {{ companies|length }}</span>
+    </div>
+</div>
+
+<!-- ==========================================
+     CREATE COMPANY MODAL
+     ========================================== -->
+<div id="createCompanyModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title">Add New Company</h2>
+            <button class="close-btn" onclick="closeModal('createCompanyModal')">&times;</button>
+        </div>
+        <form action="{{ url_for('create_company') }}" method="POST">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="name">Company Name *</label>
+                    <input type="text" id="name" name="name" class="form-control" placeholder="e.g. DBS Bank" required autocomplete="off">
+                </div>
+
+                <div class="form-group">
+                    <label for="industry">Industry *</label>
+                    <input type="text" id="industry" name="industry" class="form-control" placeholder="e.g. Banking & Financial Services" required autocomplete="off">
+                </div>
+
+                <div class="form-group">
+                    <label for="contact_email">Contact Email *</label>
+                    <input type="email" id="contact_email" name="contact_email" class="form-control" placeholder="e.g. recruit@dbs.com" required autocomplete="off">
+                </div>
+
+                <div class="form-group">
+                    <label for="locations">Locations * (Comma Separated)</label>
+                    <input type="text" id="locations" name="locations" class="form-control" placeholder="e.g. Mumbai, Bangalore, Hyderabad" required autocomplete="off">
+                    <small style="color: var(--text-muted); font-size: 11px; margin-top: 4px; display: block;">
+                        List all office locations separated by a comma (e.g. Mumbai, Bangalore).
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('createCompanyModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Company</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ==========================================
+     EDIT COMPANY MODAL
+     ========================================== -->
+<div id="editCompanyModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title">Edit Company Details</h2>
+            <button class="close-btn" onclick="closeModal('editCompanyModal')">&times;</button>
+        </div>
+        <form action="{{ url_for('edit_company') }}" method="POST">
+            <input type="hidden" id="edit_id" name="company_id">
+            
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="edit_name">Company Name *</label>
+                    <input type="text" id="edit_name" name="name" class="form-control" required autocomplete="off">
+                </div>
+
+                <div class="form-group">
+                    <label for="edit_industry">Industry *</label>
+                    <input type="text" id="edit_industry" name="industry" class="form-control" required autocomplete="off">
+                </div>
+
+                <div class="form-group">
+                    <label for="edit_contact_email">Contact Email *</label>
+                    <input type="email" id="edit_contact_email" name="contact_email" class="form-control" required autocomplete="off">
+                </div>
+
+                <div class="form-group">
+                    <label for="edit_locations">Locations * (Comma Separated)</label>
+                    <input type="text" id="edit_locations" name="locations" class="form-control" required autocomplete="off">
+                    <small style="color: var(--text-muted); font-size: 11px; margin-top: 4px; display: block;">
+                        List all office locations separated by a comma. Emptying this deletes all locations.
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('editCompanyModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">Update Company</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function editCompany(button) {
+        const id = button.getAttribute('data-id');
+        const name = button.getAttribute('data-name');
+        const industry = button.getAttribute('data-industry');
+        const email = button.getAttribute('data-email');
+        const locations = button.getAttribute('data-locations');
+
+        document.getElementById('edit_id').value = id;
+        document.getElementById('edit_name').value = name;
+        document.getElementById('edit_industry').value = industry;
+        document.getElementById('edit_contact_email').value = email;
+        document.getElementById('edit_locations').value = locations;
+
+        openModal('editCompanyModal');
+    }
+</script>
+{% endblock %}

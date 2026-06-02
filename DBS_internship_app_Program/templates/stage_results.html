@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+
+{% block title %}Stage Results - Placement Tracking System{% endblock %}
+
+{% block content %}
+<div class="page-title">Stage Results</div>
+
+<div class="card">
+    <div class="toolbar">
+        <div class="toolbar-left">
+            <form action="{{ url_for('list_results') }}" method="GET" style="display: flex; gap: 10px;">
+                <div class="search-container">
+                    <span class="material-symbols-outlined">search</span>
+                    <input type="text" name="search" placeholder="Search by student or stage..." value="{{ search_query or '' }}">
+                </div>
+                <button type="submit" class="btn btn-secondary">Go</button>
+            </form>
+        </div>
+
+        <button class="btn btn-primary" onclick="openModal('createResultModal')">
+            <span class="material-symbols-outlined" style="font-size: 18px;">add</span>
+            Log Result
+        </button>
+    </div>
+
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th style="width: 60px;"></th>
+                    <th>Student Name</th>
+                    <th>Company</th>
+                    <th>Job Title</th>
+                    <th>Stage Number</th>
+                    <th>Stage Type</th>
+                    <th>Result</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if results %}
+                    {% for res in results %}
+                    <tr>
+                        <td class="actions-cell">
+                            <button class="icon-btn edit-btn" title="Edit Stage Result"
+                                    data-id="{{ res.result_id }}"
+                                    data-app-id="{{ res.application_id }}"
+                                    data-student-name="{{ res.student_name }}"
+                                    data-role-title="{{ res.role_title }}"
+                                    data-company-name="{{ res.company_name }}"
+                                    data-stage-id="{{ res.stage_id }}"
+                                    data-status="{{ res.result_status }}"
+                                    onclick="editResult(this)">
+                                <span class="material-symbols-outlined">edit_square</span>
+                            </button>
+                            <a href="{{ url_for('delete_result', result_id=res.result_id) }}" 
+                               class="icon-btn delete" 
+                               onclick="return confirm('Are you sure you want to delete this result record? This may revert application status.');"
+                               title="Delete Result">
+                                <span class="material-symbols-outlined">delete</span>
+                            </a>
+                        </td>
+                        <td style="font-weight: 500;">{{ res.student_name }}</td>
+                        <td>{{ res.company_name }}</td>
+                        <td>{{ res.role_title }}</td>
+                        <td>
+                            <span class="badge badge-info">Stage {{ res.stage_number }}</span>
+                        </td>
+                        <td>{{ res.stage_type }}</td>
+                        <td>
+                            <span class="badge {% if res.result_status == 'Pass' %}badge-success{% else %}badge-danger{% endif %}">
+                                {{ res.result_status }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 20px;">
+                            No stage results logged yet. Click "Log Result" to add one.
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="pagination">
+        <span>1 - {{ results|length }} of {{ results|length }}</span>
+    </div>
+</div>
+
+<!-- ==========================================
+     CREATE RESULT MODAL
+     ========================================== -->
+<div id="createResultModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title">Log Student Stage Result</h2>
+            <button class="close-btn" onclick="closeModal('createResultModal')">&times;</button>
+        </div>
+        <form action="{{ url_for('create_result') }}" method="POST">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="application_id">Select Job Application *</label>
+                    <select id="application_id" name="application_id" class="form-control" required onchange="filterStagesForRole()">
+                        <option value="">-- Choose Application --</option>
+                        {% for app in applications %}
+                            <option value="{{ app.application_id }}" data-role-id="{{ app.role_id }}">
+                                {{ app.student_name }} - {{ app.company_name }} ({{ app.role_title }} - Status: {{ app.current_status }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="stage_id">Select Selection Stage *</label>
+                    <select id="stage_id" name="stage_id" class="form-control" required>
+                        <option value="">-- Choose Stage --</option>
+                        {% for stage in stages %}
+                            <option value="{{ stage.stage_id }}" data-role-id="{{ stage.role_id }}">
+                                {{ stage.company_name }} - {{ stage.role_title }}: Stage {{ stage.stage_number }} - {{ stage.stage_type }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <small style="color: var(--text-muted); font-size: 11px; margin-top: 4px; display: block;">
+                        * Please select the stage that belongs to the same job role as the application.
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label for="result_status">Result Status *</label>
+                    <select id="result_status" name="result_status" class="form-control" required>
+                        <option value="Pass">Pass</option>
+                        <option value="Fail">Fail</option>
+                    </select>
+                    <small style="color: var(--text-muted); font-size: 11px; margin-top: 6px; display: block;">
+                        * Logging a **Fail** automatically rejects the application. Logging a **Pass** for the final stage automatically selects the student and generates a pending offer!
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('createResultModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Result</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ==========================================
+     EDIT RESULT MODAL
+     ========================================== -->
+<div id="editResultModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title">Edit Stage Result</h2>
+            <button class="close-btn" onclick="closeModal('editResultModal')">&times;</button>
+        </div>
+        <form action="{{ url_for('edit_result') }}" method="POST">
+            <input type="hidden" id="edit_id" name="result_id">
+            
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Student</label>
+                    <input type="text" id="edit_student_name" class="form-control" readonly style="background-color: var(--bg-color);">
+                </div>
+
+                <div class="form-group">
+                    <label>Job & Stage Info</label>
+                    <input type="text" id="edit_stage_info" class="form-control" readonly style="background-color: var(--bg-color);">
+                    <!-- Hidden reference to keep stage ID -->
+                    <input type="hidden" id="edit_stage_id" name="stage_id">
+                    <input type="hidden" id="edit_app_id" name="application_id">
+                </div>
+
+                <div class="form-group">
+                    <label for="edit_status">Result Status *</label>
+                    <select id="edit_status" name="result_status" class="form-control" required>
+                        <option value="Pass">Pass</option>
+                        <option value="Fail">Fail</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('editResultModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">Update Result</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function filterStagesForRole() {
+        const appSelect = document.getElementById('application_id');
+        const stageSelect = document.getElementById('stage_id');
+        const selectedOption = appSelect.options[appSelect.selectedIndex];
+        
+        if (!selectedOption || selectedOption.value === "") {
+            // Show all option
+            for (let i = 0; i < stageSelect.options.length; i++) {
+                stageSelect.options[i].style.display = 'block';
+            }
+            return;
+        }
+        
+        const roleId = selectedOption.getAttribute('data-role-id');
+        
+        // Loop stages and filter by role_id
+        let firstMatchIdx = -1;
+        for (let i = 1; i < stageSelect.options.length; i++) {
+            const stageRoleId = stageSelect.options[i].getAttribute('data-role-id');
+            if (stageRoleId === roleId) {
+                stageSelect.options[i].style.display = 'block';
+                if (firstMatchIdx === -1) firstMatchIdx = i;
+            } else {
+                stageSelect.options[i].style.display = 'none';
+            }
+        }
+        
+        // Auto-select first matching stage if possible
+        if (firstMatchIdx !== -1) {
+            stageSelect.selectedIndex = firstMatchIdx;
+        } else {
+            stageSelect.selectedIndex = 0;
+        }
+    }
+
+    function editResult(button) {
+        const id = button.getAttribute('data-id');
+        const appId = button.getAttribute('data-app-id');
+        const studentName = button.getAttribute('data-student-name');
+        const roleTitle = button.getAttribute('data-role-title');
+        const companyName = button.getAttribute('data-company-name');
+        const stageId = button.getAttribute('data-stage-id');
+        const status = button.getAttribute('data-status');
+
+        // Populate fields in edit modal
+        document.getElementById('edit_id').value = id;
+        document.getElementById('edit_app_id').value = appId;
+        document.getElementById('edit_student_name').value = studentName;
+        document.getElementById('edit_stage_info').value = `${companyName} - ${roleTitle}`;
+        document.getElementById('edit_stage_id').value = stageId;
+        document.getElementById('edit_status').value = status;
+
+        openModal('editResultModal');
+    }
+</script>
+{% endblock %}

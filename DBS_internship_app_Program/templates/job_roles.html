@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+
+{% block title %}Job Roles - Placement Tracking System{% endblock %}
+
+{% block content %}
+<div class="page-title">Job Roles</div>
+
+<div class="card">
+    <div class="toolbar">
+        <div class="toolbar-left">
+            <form action="{{ url_for('list_roles') }}" method="GET" style="display: flex; gap: 10px;">
+                <div class="search-container">
+                    <span class="material-symbols-outlined">search</span>
+                    <input type="text" name="search" placeholder="Search by company or title..." value="{{ search_query or '' }}">
+                </div>
+                <button type="submit" class="btn btn-secondary">Go</button>
+            </form>
+        </div>
+
+        <button class="btn btn-primary" onclick="openModal('createRoleModal')">
+            <span class="material-symbols-outlined" style="font-size: 18px;">add</span>
+            Create
+        </button>
+    </div>
+
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th style="width: 60px;"></th>
+                    <th>Company</th>
+                    <th>Role Title</th>
+                    <th>Package (LPA)</th>
+                    <th>Role Type</th>
+                    <th>Eligible CGPA</th>
+                    <th>Deadline</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if roles %}
+                    {% for role in roles %}
+                    <tr>
+                        <td class="actions-cell">
+                            <button class="icon-btn edit-btn" title="Edit Job Role"
+                                    data-id="{{ role.role_id }}"
+                                    data-company="{{ role.company_id }}"
+                                    data-title="{{ role.title }}"
+                                    data-package="{{ role.package }}"
+                                    data-type="{{ role.role_type }}"
+                                    data-cgpa="{{ role.eligibility_cgpa }}"
+                                    data-deadline="{{ role.deadline }}"
+                                    data-desc="{{ role.description or '' }}"
+                                    data-active="{{ '1' if role.is_active else '0' }}"
+                                    onclick="editRole(this)">
+                                <span class="material-symbols-outlined">edit_square</span>
+                            </button>
+                            <a href="{{ url_for('delete_role', role_id=role.role_id) }}" 
+                               class="icon-btn delete" 
+                               onclick="return confirm('Are you sure you want to delete this job role? This will cascadingly delete associated applications, selection stages, and offer records.');"
+                               title="Delete Job Role">
+                                <span class="material-symbols-outlined">delete</span>
+                            </a>
+                        </td>
+                        <td style="font-weight: 500;">{{ role.company_name }}</td>
+                        <td>{{ role.title }}</td>
+                        <td>{{ role.package }} LPA</td>
+                        <td>
+                            <span class="badge {% if role.role_type == 'Full-time' %}badge-success{% else %}badge-info{% endif %}">
+                                {{ role.role_type }}
+                            </span>
+                        </td>
+                        <td>{{ role.eligibility_cgpa }}</td>
+                        <td>{{ role.deadline }}</td>
+                        <td>
+                            {% if role.is_active %}
+                                <span class="badge badge-success">Active</span>
+                            {% else %}
+                                <span class="badge badge-danger">Inactive</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 20px;">
+                            No job roles found. Click "Create" to add one.
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="pagination">
+        <span>1 - {{ roles|length }} of {{ roles|length }}</span>
+    </div>
+</div>
+
+<!-- ==========================================
+     CREATE JOB ROLE MODAL
+     ========================================== -->
+<div id="createRoleModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title">Create Job Role</h2>
+            <button class="close-btn" onclick="closeModal('createRoleModal')">&times;</button>
+        </div>
+        <form action="{{ url_for('create_role') }}" method="POST">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="company_id">Select Company *</label>
+                    <select id="company_id" name="company_id" class="form-control" required>
+                        <option value="">-- Choose Company --</option>
+                        {% for comp in companies %}
+                            <option value="{{ comp.company_id }}">{{ comp.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="title">Role Title *</label>
+                    <input type="text" id="title" name="title" class="form-control" placeholder="e.g. Graduate Associate Tech Analyst" required autocomplete="off">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="package">Package (LPA) *</label>
+                        <input type="number" step="0.01" min="0" id="package" name="package" class="form-control" placeholder="e.g. 15.00" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="role_type">Role Type *</label>
+                        <select id="role_type" name="role_type" class="form-control" required>
+                            <option value="Internship">Internship</option>
+                            <option value="Full-time">Full-time</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="eligibility_cgpa">Minimum CGPA Requirement *</label>
+                        <input type="number" step="0.01" min="0" max="10" id="eligibility_cgpa" name="eligibility_cgpa" class="form-control" placeholder="e.g. 7.5" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="deadline">Application Deadline *</label>
+                        <input type="date" id="deadline" name="deadline" class="form-control" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Role Description</label>
+                    <textarea id="description" name="description" class="form-control" placeholder="Enter roles, responsibilities, and department info..."></textarea>
+                </div>
+
+                <div class="form-group" style="margin-top: 10px;">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="is_active" value="1" checked>
+                        <span>Mark role as Active (Available for applications)</span>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('createRoleModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Job Role</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ==========================================
+     EDIT JOB ROLE MODAL
+     ========================================== -->
+<div id="editRoleModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title">Edit Job Role</h2>
+            <button class="close-btn" onclick="closeModal('editRoleModal')">&times;</button>
+        </div>
+        <form action="{{ url_for('edit_role') }}" method="POST">
+            <input type="hidden" id="edit_id" name="role_id">
+            
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="edit_company_id">Company *</label>
+                    <select id="edit_company_id" name="company_id" class="form-control" required>
+                        {% for comp in companies %}
+                            <option value="{{ comp.company_id }}">{{ comp.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit_title">Role Title *</label>
+                    <input type="text" id="edit_title" name="title" class="form-control" required autocomplete="off">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit_package">Package (LPA) *</label>
+                        <input type="number" step="0.01" min="0" id="edit_package" name="package" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_role_type">Role Type *</label>
+                        <select id="edit_role_type" name="role_type" class="form-control" required>
+                            <option value="Internship">Internship</option>
+                            <option value="Full-time">Full-time</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit_eligibility_cgpa">Minimum CGPA Requirement *</label>
+                        <input type="number" step="0.01" min="0" max="10" id="edit_eligibility_cgpa" name="eligibility_cgpa" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_deadline">Application Deadline *</label>
+                        <input type="date" id="edit_deadline" name="deadline" class="form-control" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit_description">Role Description</label>
+                    <textarea id="edit_description" name="description" class="form-control"></textarea>
+                </div>
+
+                <div class="form-group" style="margin-top: 10px;">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="edit_is_active" name="is_active" value="1">
+                        <span>Mark role as Active (Available for applications)</span>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('editRoleModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">Update Job Role</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function editRole(button) {
+        const id = button.getAttribute('data-id');
+        const company = button.getAttribute('data-company');
+        const title = button.getAttribute('data-title');
+        const package_val = button.getAttribute('data-package');
+        const type = button.getAttribute('data-type');
+        const cgpa = button.getAttribute('data-cgpa');
+        const deadline = button.getAttribute('data-deadline');
+        const desc = button.getAttribute('data-desc');
+        const active = button.getAttribute('data-active');
+
+        document.getElementById('edit_id').value = id;
+        document.getElementById('edit_company_id').value = company;
+        document.getElementById('edit_title').value = title;
+        document.getElementById('edit_package').value = package_val;
+        document.getElementById('edit_role_type').value = type;
+        document.getElementById('edit_eligibility_cgpa').value = cgpa;
+        document.getElementById('edit_deadline').value = deadline;
+        document.getElementById('edit_description').value = desc;
+        
+        document.getElementById('edit_is_active').checked = (active === '1');
+
+        openModal('editRoleModal');
+    }
+</script>
+{% endblock %}

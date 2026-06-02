@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - Placement Tracking System</title>
+    <!-- Google Fonts & Material Symbols -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    
+    <style>
+        :root {
+            --primary-color: #0067b8;
+            --primary-hover: #005a9e;
+            --bg-color: #f3f2f1;
+            --card-bg: #ffffff;
+            --text-color: #323130;
+            --text-muted: #605e5c;
+            --border-color: #edebe9;
+            --danger-color: #a80000;
+            --font-family: 'Outfit', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background: linear-gradient(135deg, #0067b8 0%, #002b54 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            color: var(--text-color);
+        }
+
+        .login-wrapper {
+            width: 100%;
+            max-width: 420px;
+            padding: 20px;
+        }
+
+        .login-card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            padding: 35px 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .login-header {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .login-logo {
+            background-color: #deecf9;
+            color: var(--primary-color);
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-logo .material-symbols-outlined {
+            font-size: 32px;
+        }
+
+        .login-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #201f1e;
+        }
+
+        .login-subtitle {
+            font-size: 13.5px;
+            color: var(--text-muted);
+        }
+
+        /* Flash messages inside login */
+        .flash-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .flash-msg {
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .flash-msg.danger {
+            background-color: #fde7e9;
+            color: var(--danger-color);
+            border-left: 4px solid var(--danger-color);
+        }
+
+        .flash-msg.warning {
+            background-color: #fff4ce;
+            color: #d83b01;
+            border-left: 4px solid #d83b01;
+        }
+
+        .flash-msg.info {
+            background-color: #deecf9;
+            color: #0078d4;
+            border-left: 4px solid #0078d4;
+        }
+
+        /* Form Controls */
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .input-wrapper {
+            display: flex;
+            align-items: center;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 0 12px;
+            height: 42px;
+            background-color: #faf9f8;
+            transition: all 0.2s;
+        }
+
+        .input-wrapper:focus-within {
+            border-color: var(--primary-color);
+            background-color: #ffffff;
+            box-shadow: 0 0 0 2px rgba(0, 103, 184, 0.2);
+        }
+
+        .input-wrapper input {
+            border: none;
+            outline: none;
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            font-family: var(--font-family);
+            font-size: 14px;
+            margin-left: 8px;
+        }
+
+        .input-wrapper .material-symbols-outlined {
+            color: var(--text-muted);
+            font-size: 18px;
+        }
+
+        .btn-submit {
+            background-color: var(--primary-color);
+            color: #ffffff;
+            font-family: var(--font-family);
+            font-size: 14.5px;
+            font-weight: 600;
+            border: none;
+            border-radius: 6px;
+            height: 44px;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s;
+            margin-top: 10px;
+            box-shadow: 0 2px 8px rgba(0, 103, 184, 0.25);
+        }
+
+        .btn-submit:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 103, 184, 0.35);
+        }
+
+        .btn-submit:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-wrapper">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="login-logo">
+                    <span class="material-symbols-outlined">shield_person</span>
+                </div>
+                <div class="login-title">Administrator Portal</div>
+                <div class="login-subtitle">Placement Tracking System</div>
+            </div>
+
+            <!-- Flash Alerts -->
+            <div class="flash-container">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="flash-msg {{ category }}">
+                                <span class="material-symbols-outlined" style="font-size: 16px;">
+                                    {% if category == 'danger' %}error{% else %}warning{% endif %}
+                                </span>
+                                <span>{{ message }}</span>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+            </div>
+
+            <form action="{{ url_for('admin.login') }}" method="POST">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <div class="input-wrapper">
+                        <span class="material-symbols-outlined">person</span>
+                        <input type="text" id="username" name="username" placeholder="Enter admin username" required autofocus autocomplete="off">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="input-wrapper">
+                        <span class="material-symbols-outlined">lock</span>
+                        <input type="password" id="password" name="password" placeholder="Enter password" required autocomplete="current-password">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-submit">Sign In</button>
+            </form>
+        </div>
+    </div>
+
+</body>
+</html>

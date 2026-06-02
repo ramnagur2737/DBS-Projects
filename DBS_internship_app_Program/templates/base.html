@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Placement Tracking System{% endblock %}</title>
+    <!-- Google Fonts & Material Symbols -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    
+    <style>
+        :root {
+            --primary-color: #0067b8;
+            --primary-hover: #005a9e;
+            --bg-color: #f3f2f1;
+            --card-bg: #ffffff;
+            --sidebar-bg: #29323c;
+            --sidebar-hover: #1e242b;
+            --sidebar-active: #1f252d;
+            --text-color: #323130;
+            --text-muted: #605e5c;
+            --border-color: #edebe9;
+            --success-color: #107c41;
+            --danger-color: #a80000;
+            --warning-color: #d83b01;
+            --info-color: #0078d4;
+            --font-family: 'Outfit', sans-serif;
+            --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Sidebar Styling */
+        .sidebar {
+            width: 250px;
+            background-color: var(--sidebar-bg);
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 100;
+        }
+
+        .sidebar-header {
+            height: 50px;
+            background-color: var(--primary-hover);
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            font-size: 16px;
+            font-weight: 600;
+            gap: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 10px 0;
+            flex-grow: 1;
+        }
+
+        .sidebar-item a {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #d2d5d8;
+            text-decoration: none;
+            font-size: 14.5px;
+            font-weight: 500;
+            gap: 15px;
+            transition: var(--transition);
+            border-left: 4px solid transparent;
+        }
+
+        .sidebar-item a:hover {
+            background-color: var(--sidebar-hover);
+            color: #ffffff;
+        }
+
+        .sidebar-item.active a {
+            background-color: var(--sidebar-active);
+            color: #ffffff;
+            font-weight: 600;
+            border-left-color: var(--primary-color);
+        }
+
+        .sidebar-item .material-symbols-outlined {
+            font-size: 20px;
+        }
+
+        /* Layout Main Section */
+        .main-container {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        /* Top Header */
+        .header {
+            height: 50px;
+            background-color: var(--primary-color);
+            color: #ffffff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-title-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .header-profile {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            position: relative;
+            font-size: 13.5px;
+            padding: 5px 10px;
+            border-radius: 4px;
+            transition: var(--transition);
+        }
+
+        .header-profile:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .header-profile a {
+            color: #ffffff;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Content Body */
+        .content {
+            padding: 24px 32px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            max-width: 1600px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .page-title {
+            font-size: 26px;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        /* Flash Messages */
+        .flash-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .flash-msg {
+            padding: 12px 18px;
+            border-radius: 6px;
+            font-size: 14.5px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            animation: slideDown 0.3s ease;
+        }
+
+        .flash-msg.success {
+            background-color: #dff6dd;
+            color: var(--success-color);
+            border-left: 5px solid var(--success-color);
+        }
+
+        .flash-msg.danger {
+            background-color: #fde7e9;
+            color: var(--danger-color);
+            border-left: 5px solid var(--danger-color);
+        }
+
+        .flash-msg.warning {
+            background-color: #fff4ce;
+            color: var(--warning-color);
+            border-left: 5px solid var(--warning-color);
+        }
+
+        .flash-msg.info {
+            background-color: #deecf9;
+            color: var(--info-color);
+            border-left: 5px solid var(--info-color);
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-10px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* Premium Card / Dashboard Section */
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--box-shadow);
+            padding: 20px;
+        }
+
+        /* Actions Toolbar */
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .toolbar-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .search-container {
+            display: flex;
+            align-items: center;
+            border: 1px solid var(--border-color);
+            background-color: #ffffff;
+            border-radius: 4px;
+            padding: 4px 8px;
+            height: 35px;
+            width: 250px;
+            transition: var(--transition);
+        }
+
+        .search-container:focus-within {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(0, 103, 184, 0.2);
+        }
+
+        .search-container input {
+            border: none;
+            outline: none;
+            width: 100%;
+            font-size: 13.5px;
+            font-family: var(--font-family);
+            margin-left: 5px;
+        }
+
+        .search-container .material-symbols-outlined {
+            color: var(--text-muted);
+            font-size: 20px;
+        }
+
+        .btn {
+            font-family: var(--font-family);
+            font-size: 13.5px;
+            font-weight: 500;
+            padding: 0 16px;
+            height: 35px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: var(--transition);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: #ffffff;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-secondary {
+            background-color: #ffffff;
+            border-color: var(--border-color);
+            color: var(--text-color);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--bg-color);
+            border-color: #a19f9d;
+        }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: #ffffff;
+        }
+
+        .btn-danger:hover {
+            background-color: #8a0000;
+        }
+
+        /* Dropdown style */
+        .select-actions {
+            height: 35px;
+            padding: 0 10px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            font-family: var(--font-family);
+            font-size: 13.5px;
+            background-color: #ffffff;
+            outline: none;
+            cursor: pointer;
+        }
+
+        /* Table Styling */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13.5px;
+            text-align: left;
+            background-color: #ffffff;
+        }
+
+        .data-table th {
+            background-color: #f8f9fa;
+            color: var(--text-color);
+            font-weight: 600;
+            padding: 12px 16px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .data-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-color);
+            vertical-align: middle;
+        }
+
+        .data-table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .actions-cell {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--primary-color);
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px;
+            border-radius: 4px;
+        }
+
+        .icon-btn:hover {
+            background-color: #deecf9;
+            color: var(--primary-hover);
+            transform: scale(1.1);
+        }
+
+        .icon-btn.delete {
+            color: var(--danger-color);
+        }
+
+        .icon-btn.delete:hover {
+            background-color: #fde7e9;
+            color: #8a0000;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11.5px;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+
+        .badge-success { background-color: #dff6dd; color: var(--success-color); }
+        .badge-danger { background-color: #fde7e9; color: var(--danger-color); }
+        .badge-warning { background-color: #fff4ce; color: #7a5e00; }
+        .badge-info { background-color: #deecf9; color: var(--info-color); }
+
+        .pagination {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            padding: 15px 0 0 0;
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 500;
+            gap: 10px;
+        }
+
+        /* Modal Dialog Framework */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.4);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .modal-content {
+            background-color: #ffffff;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+            animation: slideUp 0.25s cubic-bezier(0.1, 0.9, 0.2, 1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            padding: 16px 24px;
+            background-color: var(--primary-color);
+            color: #ffffff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: #ffffff;
+            font-size: 24px;
+            cursor: pointer;
+            display: inline-flex;
+        }
+
+        .modal-body {
+            padding: 24px;
+            overflow-y: auto;
+            max-height: 70vh;
+        }
+
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            background-color: #f8f9fa;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* Form Controls */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13.5px;
+            font-weight: 600;
+            color: var(--text-color);
+            margin-bottom: 6px;
+        }
+
+        .form-control {
+            width: 100%;
+            height: 38px;
+            padding: 8px 12px;
+            font-family: var(--font-family);
+            font-size: 13.5px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(0, 103, 184, 0.2);
+        }
+
+        textarea.form-control {
+            height: 100px;
+            resize: vertical;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        .checkbox-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13.5px;
+            font-weight: 500;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .checkbox-label input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        /* Link utility */
+        .table-link {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .table-link:hover {
+            color: var(--primary-hover);
+            text-decoration: underline;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+    <!-- Sidebar Navigation -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <span class="material-symbols-outlined">menu</span>
+            <span>Placement Tracking</span>
+        </div>
+        <ul class="sidebar-menu">
+            <li class="sidebar-item {% if request.path == '/' or request.path == '/home' %}active{% endif %}">
+                <a href="{{ url_for('dashboard') }}">
+                    <span class="material-symbols-outlined">home</span>
+                    <span>Home</span>
+                </a>
+            </li>
+            <li class="sidebar-item {% if request.path.startswith('/students') %}active{% endif %}">
+                <a href="{{ url_for('list_students') }}">
+                    <span class="material-symbols-outlined">table_chart</span>
+                    <span>Student Details</span>
+                </a>
+            </li>
+            <li class="sidebar-item {% if request.path.startswith('/companies') %}active{% endif %}">
+                <a href="{{ url_for('list_companies') }}">
+                    <span class="material-symbols-outlined">table_chart</span>
+                    <span>Company Details</span>
+                </a>
+            </li>
+            <li class="sidebar-item {% if request.path.startswith('/roles') %}active{% endif %}">
+                <a href="{{ url_for('list_roles') }}">
+                    <span class="material-symbols-outlined">table_chart</span>
+                    <span>Job Roles</span>
+                </a>
+            </li>
+            <li class="sidebar-item {% if request.path.startswith('/applications') %}active{% endif %}">
+                <a href="{{ url_for('list_applications') }}">
+                    <span class="material-symbols-outlined">table_chart</span>
+                    <span>Applications</span>
+                </a>
+            </li>
+            <li class="sidebar-item {% if request.path.startswith('/offers') %}active{% endif %}">
+                <a href="{{ url_for('list_offers') }}">
+                    <span class="material-symbols-outlined">table_chart</span>
+                    <span>Offers</span>
+                </a>
+            </li>
+            <li class="sidebar-item {% if request.path.startswith('/stages') %}active{% endif %}">
+                <a href="{{ url_for('list_stages') }}">
+                    <span class="material-symbols-outlined">table_chart</span>
+                    <span>Selection stages</span>
+                </a>
+            </li>
+            <li class="sidebar-item {% if request.path.startswith('/results') %}active{% endif %}">
+                <a href="{{ url_for('list_results') }}">
+                    <span class="material-symbols-outlined">table_chart</span>
+                    <span>Stage Results</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Top Blue Header -->
+        <div class="header">
+            <div class="header-title-container">
+                <span class="header-title">Placement Tracking System</span>
+            </div>
+            
+            {% if session.get('username') %}
+            <div class="header-profile">
+                <a href="{{ url_for('admin.logout') }}" title="Click to log out">
+                    <span class="material-symbols-outlined">account_circle</span>
+                    <span>{{ session.get('username') }}</span>
+                    <span class="material-symbols-outlined" style="font-size: 16px;">logout</span>
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Main Content -->
+        <div class="content">
+            <!-- Flash Alerts -->
+            <div class="flash-container">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="flash-msg {{ category }}">
+                                <span class="material-symbols-outlined">
+                                    {% if category == 'success' %}check_circle
+                                    {% elif category == 'danger' %}error
+                                    {% elif category == 'warning' %}warning
+                                    {% else %}info
+                                    {% endif %}
+                                </span>
+                                <span>{{ message }}</span>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+            </div>
+
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+
+    <!-- Global Modal JavaScript helpers -->
+    <script>
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = 'flex';
+        }
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+        // Close modal when clicking outside content card
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        }
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
